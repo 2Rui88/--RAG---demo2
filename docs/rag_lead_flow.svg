@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="1900" viewBox="0 0 2600 1900">
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#444"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="1300" y="58" text-anchor="middle" font-family="Microsoft YaHei, SimHei, Arial" font-size="44" font-weight="700" fill="#1f2933">基于 RAG 的留资 Demo 全流程图</text>
+<text x="1300" y="105" text-anchor="middle" font-family="Microsoft YaHei, SimHei, Arial" font-size="22" fill="#52616b">前端会话 → 后端状态机 → RAG 检索生成 → 留资入 CRM → 索引管理</text>
+<g font-family="Microsoft YaHei, SimHei, Arial">
+<rect x="70" y="140" width="520" height="1580" rx="22" fill="#EAF5FF" stroke="#5B9EE6" stroke-width="2"/>
+<text x="98" y="182" font-size="28" font-weight="700" fill="#203040">前端交互</text>
+<rect x="650" y="140" width="690" height="1580" rx="22" fill="#F5EEFF" stroke="#9B72D0" stroke-width="2"/>
+<text x="678" y="182" font-size="28" font-weight="700" fill="#203040">后端会话状态机</text>
+<rect x="1400" y="140" width="720" height="1200" rx="22" fill="#ECF8F1" stroke="#4EA66A" stroke-width="2"/>
+<text x="1428" y="182" font-size="28" font-weight="700" fill="#203040">RAG 检索与生成</text>
+<rect x="2180" y="140" width="350" height="1580" rx="22" fill="#FFF7E6" stroke="#D9A441" stroke-width="2"/>
+<text x="2208" y="182" font-size="28" font-weight="700" fill="#203040">CRM / 索引管理</text>
+<rect x="160" y="220" width="340" height="78" rx="16" fill="#FFFFFF" stroke="#5B9EE6" stroke-width="3"/>
+<text x="330" y="259" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">用户打开首页</text>
+<rect x="150" y="340" width="360" height="96" rx="16" fill="#FFFFFF" stroke="#5B9EE6" stroke-width="3"/>
+<text x="330" y="355" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">前端页面</text>
+<text x="330" y="388" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">static/index.ht</text>
+<text x="330" y="421" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ml + app.js</text>
+<rect x="150" y="480" width="360" height="96" rx="16" fill="#FFFFFF" stroke="#5B9EE6" stroke-width="3"/>
+<text x="330" y="495" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">初始化/重置会话</text>
+<text x="330" y="528" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">POST /api/sessi</text>
+<text x="330" y="561" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ons/{id}/reset</text>
+<rect x="150" y="1500" width="360" height="112" rx="16" fill="#FFFFFF" stroke="#5B9EE6" stroke-width="3"/>
+<text x="330" y="1539.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">渲染回复、状态、slots</text>
+<text x="330" y="1572.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">快捷回复、RAG 来源</text>
+<rect x="170" y="1660" width="320" height="60" rx="16" fill="#FFFFFF" stroke="#5B9EE6" stroke-width="3"/>
+<text x="330" y="1690" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">等待下一轮输入</text>
+<rect x="790" y="220" width="400" height="90" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="990" y="232" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">welcome_respons</text>
+<text x="990" y="265" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">e</text>
+<text x="990" y="298" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">进入资格诊断</text>
+<rect x="790" y="350" width="400" height="106" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="990" y="370" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">资格诊断</text>
+<text x="990" y="403" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">education → goa</text>
+<text x="990" y="436" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">l → purpose</text>
+<rect x="790" y="500" width="400" height="88" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="990" y="511" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">POST /api/chat</text>
+<text x="990" y="544" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">session_id + me</text>
+<text x="990" y="577" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ssage</text>
+<rect x="790" y="630" width="400" height="98" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="990" y="662.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">handle_message</text>
+<text x="990" y="695.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">状态机与意图路由</text>
+<polygon points="990,780 1190,839 990,898 790,839" fill="#FFF5CC" stroke="#B98518" stroke-width="3"/>
+<text x="990" y="809.96" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">当前在</text>
+<text x="990" y="839" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">lead_hook / p</text>
+<text x="990" y="868.0400000000001" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">hone_verify?</text>
+<polygon points="990,940 1210,1001 990,1062 770,1001" fill="#FFF5CC" stroke="#B98518" stroke-width="3"/>
+<text x="990" y="971.96" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">强留资意图?</text>
+<text x="990" y="1001" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">费用/资格/最快拿证/老师</text>
+<text x="990" y="1030.04" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">联系</text>
+<polygon points="990,1105 1200,1164 990,1223 780,1164" fill="#FFF5CC" stroke="#B98518" stroke-width="3"/>
+<text x="990" y="1164" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">资格诊断完成?</text>
+<rect x="790" y="1260" width="400" height="96" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="990" y="1291.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">自由问答处理</text>
+<text x="990" y="1324.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">问候/无关/业务问题</text>
+<rect x="790" y="1400" width="400" height="100" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="990" y="1433.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">业务问题</text>
+<text x="990" y="1466.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">qa_turns + 1</text>
+<polygon points="990,1540 1200,1596 990,1652 780,1596" fill="#FFF5CC" stroke="#B98518" stroke-width="3"/>
+<text x="990" y="1596" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">问答轮次 ≥ 10?</text>
+<rect x="975" y="1690" width="230" height="72" rx="16" fill="#FFFFFF" stroke="#9B72D0" stroke-width="3"/>
+<text x="1090" y="1726" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ChatResponse</text>
+<rect x="2220" y="235" width="270" height="96" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="266.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">手机号步骤</text>
+<text x="2355" y="299.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">拒绝/校验/保存</text>
+<rect x="2220" y="370" width="270" height="96" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="401.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">拒绝手机号</text>
+<text x="2355" y="434.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">写 downgraded 线索</text>
+<rect x="2220" y="500" width="270" height="96" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="531.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">手机号有效</text>
+<text x="2355" y="564.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">写 full 线索</text>
+<rect x="2220" y="630" width="270" height="82" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="654.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">InMemoryCrm.lea</text>
+<text x="2355" y="687.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ds</text>
+<rect x="2220" y="745" width="270" height="78" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="751" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">GET /api/crm/le</text>
+<text x="2355" y="784" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ads</text>
+<text x="2355" y="817" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">查看线索</text>
+<rect x="2220" y="895" width="270" height="108" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="916" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">lead_hook</text>
+<text x="2355" y="949" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">解释需老师规划</text>
+<text x="2355" y="982" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">请求手机号</text>
+<rect x="2220" y="1045" width="270" height="100" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="1078.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">补齐诊断 slots</text>
+<text x="2355" y="1111.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">继续快捷提问</text>
+<rect x="1575" y="1280" width="360" height="86" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1755" y="1290" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">调用 RAG 回答</text>
+<text x="1755" y="1323" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">_answer_user_ne</text>
+<text x="1755" y="1356" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ed</text>
+<rect x="1485" y="420" width="250" height="92" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1610" y="449.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">BM25</text>
+<text x="1610" y="482.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">关键词检索</text>
+<rect x="1785" y="420" width="250" height="92" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1910" y="433" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">可选向量检索</text>
+<text x="1910" y="466" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">VectorIndex.sea</text>
+<text x="1910" y="499" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">rch</text>
+<rect x="1575" y="560" width="360" height="82" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1755" y="601" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">RRF 融合结果</text>
+<rect x="1575" y="685" width="360" height="82" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1755" y="709.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">轻量重排</text>
+<text x="1755" y="742.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">Top 5</text>
+<polygon points="1755,810 1935,866 1755,922 1575,866" fill="#FFF5CC" stroke="#B98518" stroke-width="3"/>
+<text x="1755" y="851.48" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">置信度与实体覆盖</text>
+<text x="1755" y="880.52" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">是否通过?</text>
+<rect x="1575" y="965" width="360" height="112" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1755" y="988" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">Top 3 来源</text>
+<text x="1755" y="1021" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">Qwen 生成或抽取式 fal</text>
+<text x="1755" y="1054" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">lback</text>
+<rect x="1575" y="1120" width="360" height="90" rx="16" fill="#FFFFFF" stroke="#4EA66A" stroke-width="3"/>
+<text x="1755" y="1148.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">必要时压缩/截断</text>
+<text x="1755" y="1181.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">拼接来源与软引导</text>
+<rect x="1575" y="1465" width="360" height="96" rx="16" fill="#FFECEC" stroke="#D64545" stroke-width="3"/>
+<text x="1755" y="1496.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">未命中/置信不足</text>
+<text x="1755" y="1529.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">软性引导留资</text>
+<rect x="2220" y="1195" width="270" height="78" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="1217.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">GET /api/rag/st</text>
+<text x="2355" y="1250.5" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">atus</text>
+<rect x="2220" y="1310" width="270" height="92" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="1323" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">POST /api/rag/r</text>
+<text x="2355" y="1356" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">ebuild</text>
+<text x="2355" y="1389" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">重建向量索引</text>
+<polygon points="2355,1440 2490,1494 2355,1548 2220,1494" fill="#FFF5CC" stroke="#B98518" stroke-width="3"/>
+<text x="2355" y="1464.96" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">RAG_EMBEDDING</text>
+<text x="2355" y="1494" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">_ENABLED</text>
+<text x="2355" y="1523.04" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="#1f2933">=true?</text>
+<rect x="2220" y="1595" width="270" height="96" rx="16" fill="#FFFFFF" stroke="#D9A441" stroke-width="3"/>
+<text x="2355" y="1610" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">读取 chunks.jsonl</text>
+<text x="2355" y="1643" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">写 vector_index.</text>
+<text x="2355" y="1676" text-anchor="middle" dominant-baseline="middle" font-size="25" font-weight="400" fill="#1f2933">json</text>
+<line x1="330" y1="298" x2="330" y2="340" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="330" y1="436" x2="330" y2="480" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="510" y1="528" x2="790" y2="265" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="310" x2="990" y2="350" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="456" x2="990" y2="500" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="588" x2="990" y2="630" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="728" x2="990" y2="780" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1190" y1="839" x2="2220" y2="283" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1676" y="542" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1705" y="562" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">是</text>
+<line x1="2355" y1="331" x2="2355" y2="370" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="2325" y="331.5" width="60" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="2355" y="351.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">拒绝</text>
+<line x1="2355" y1="331" x2="2355" y2="500" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="2325" y="396.5" width="60" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="2355" y="416.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">有效</text>
+<line x1="2355" y1="466" x2="2355" y2="630" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2355" y1="596" x2="2355" y2="630" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2355" y1="712" x2="2355" y2="745" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2220" y1="418" x2="1205" y2="1726" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2220" y1="548" x2="1205" y2="1726" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="898" x2="990" y2="940" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="961" y="900" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="990" y="920" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">否</text>
+<line x1="1210" y1="1001" x2="2220" y2="949" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1686" y="956" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1715" y="976" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">是</text>
+<line x1="2220" y1="949" x2="1205" y2="1726" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="1062" x2="990" y2="1105" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="961" y="1064.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="990" y="1084.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">否</text>
+<line x1="1200" y1="1164" x2="2220" y2="1095" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1681" y="1110.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1710" y="1130.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">否</text>
+<line x1="2220" y1="1095" x2="1205" y2="1726" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="1223" x2="990" y2="1260" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="961" y="1222.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="990" y="1242.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">是</text>
+<line x1="990" y1="1356" x2="990" y2="1400" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="990" y1="1500" x2="990" y2="1540" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1200" y1="1596" x2="2220" y2="949" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1681" y="1253.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1710" y="1273.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">是</text>
+<line x1="1200" y1="1596" x2="1575" y2="1323" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1358.5" y="1440.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1387.5" y="1460.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">否</text>
+<line x1="1755" y1="1280" x2="1610" y2="512" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1755" y1="1280" x2="1910" y2="512" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1802.5" y="877" width="60" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1832.5" y="897" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">可选</text>
+<line x1="1610" y1="512" x2="1755" y2="560" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1910" y1="512" x2="1755" y2="560" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1755" y1="642" x2="1755" y2="685" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1755" y1="767" x2="1755" y2="810" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1755" y1="922" x2="1755" y2="1465" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1726" y="1174.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1755" y="1194.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">否</text>
+<line x1="1755" y1="922" x2="1755" y2="965" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1726" y="924.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1755" y="944.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">是</text>
+<line x1="1755" y1="1077" x2="1755" y2="1120" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1575" y1="1165" x2="1205" y2="1726" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1575" y1="1513" x2="1205" y2="1726" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="975" y1="1726" x2="510" y2="1556" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="330" y1="1612" x2="330" y2="1660" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="490" y1="1690" x2="790" y2="544" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="510" y1="388" x2="2220" y2="1234" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1317" y="792" width="96" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1365" y="812" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">状态查询</text>
+<line x1="510" y1="388" x2="2220" y2="1356" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1317" y="853" width="96" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="1365" y="873" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">点击重建</text>
+<line x1="2355" y1="1402" x2="2355" y2="1440" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2355" y1="1548" x2="2355" y2="1595" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="2326" y="1552.5" width="58" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="2355" y="1572.5" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">是</text>
+<line x1="2220" y1="1643" x2="1935" y2="1323" stroke="#444" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="2029.5" y="1464" width="96" height="38" rx="8" fill="#fff" stroke="#ddd"/>
+<text x="2077.5" y="1484" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#52616b">刷新服务</text>
+<text x="90" y="1785" font-size="22" fill="#52616b">图例：蓝色=前端交互，紫色=后端状态机，绿色=RAG，黄色=CRM/索引管理，红色=未命中或需用户修正。</text>
+<text x="90" y="1830" font-size="22" fill="#52616b">核心转化逻辑：普通政策问题先用 RAG 建立信任；费用、资格、最快拿证、人工老师等高意向问题转入 lead_hook；手机号有效写 full 线索，拒绝则写 downgraded 线索。</text>
+</g></svg>

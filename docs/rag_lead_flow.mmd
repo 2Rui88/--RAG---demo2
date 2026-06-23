@@ -1,0 +1,104 @@
+flowchart TD
+    user[用户] --> ui[前端页面<br/>static/index.html + app.js]
+    ui --> reset[初始化或重置会话<br/>POST /api/sessions/{session_id}/reset]
+    reset --> welcome[ConversationEngine<br/>welcome_response]
+    welcome --> qualify[资格诊断<br/>收集学历、目标、用途]
+    qualify --> chat[用户继续输入或点击快捷回复<br/>POST /api/chat]
+
+    chat --> session[读取会话<br/>get_session]
+    session --> router[handle_message<br/>状态机与意图路由]
+
+    router --> phoneCheck{当前在留资/验号状态?}
+    phoneCheck -- 是 --> phoneStep[手机号步骤<br/>拒绝、校验、保存]
+    phoneStep --> crmDecision{是否形成线索?}
+    crmDecision -- 拒绝手机号 --> downgraded[写入 downgraded 线索<br/>只保存基础 slots]
+    crmDecision -- 手机号有效 --> fullLead[写入 full 线索<br/>保存手机号 + slots]
+    crmDecision -- 格式错误 --> retryPhone[提示重新输入手机号]
+    downgraded --> response[ChatResponse]
+    fullLead --> response
+    retryPhone --> response
+
+    phoneCheck -- 否 --> directLead{强留资意图?<br/>费用、资格、最快拿证、老师联系}
+    directLead -- 是 --> hook[lead_hook<br/>说明需老师免费规划<br/>请求手机号]
+    hook --> response
+
+    directLead -- 否 --> qualState{资格诊断是否完成?}
+    qualState -- 否 --> collectSlots[按顺序补齐 slots<br/>education → goal → purpose]
+    collectSlots --> response
+
+    qualState -- 是 --> freeText[自由问答处理<br/>_handle_free_text]
+    freeText --> typeCheck{消息类型}
+    typeCheck -- 问候 --> greeting[问候并引导回业务]
+    typeCheck -- 无关问题 --> unrelated[礼貌拒答并拉回学历提升]
+    greeting --> response
+    unrelated --> response
+
+    typeCheck -- 业务问题 --> qaTurn[问答轮次 + 1]
+    qaTurn --> turnLimit{问答轮次 ≥ 10?}
+    turnLimit -- 是 --> answerThenLead[先回答<br/>再触发 lead_hook]
+    answerThenLead --> response
+
+    turnLimit -- 否 --> ragEntry[调用 RAG 回答<br/>_answer_user_need]
+    ragEntry --> ragAvailable{RAG 服务可用并命中?}
+    ragAvailable -- 否 --> fallback[知识库无明确依据<br/>设置 pending_soft_lead<br/>软性引导留资]
+    fallback --> response
+    ragAvailable -- 是 --> ragSearch[RagService.search]
+
+    subgraph RAG[RAG 检索与生成]
+        ragSearch --> keyword[关键词 BM25 检索<br/>LocalKeywordRetriever]
+        ragSearch --> vectorDecision{启用向量索引?}
+        vectorDecision -- 是 --> vector[Embedding 查询向量<br/>VectorIndex.search]
+        vectorDecision -- 否 --> noVector[跳过向量检索]
+        keyword --> fuse[RRF 融合]
+        vector --> fuse
+        noVector --> fuse
+        fuse --> rerank[LightweightReranker 重排]
+        rerank --> confidence{置信度与实体覆盖通过?}
+        confidence -- 否 --> fallback
+        confidence -- 是 --> topSources[取 Top 3 来源]
+        topSources --> llmDecision{Qwen LLM 可用?}
+        llmDecision -- 是 --> generate[generate_rag_answer<br/>基于来源生成回答]
+        llmDecision -- 否 --> extractive[抽取式 fallback]
+        generate --> compress{回答过长或不完整?}
+        extractive --> compress
+        compress -- 是 --> compressed[压缩或截断回答]
+        compress -- 否 --> sourcedReply[拼接来源与软引导]
+        compressed --> sourcedReply
+    end
+
+    sourcedReply --> response
+    response --> render[前端渲染回复、状态、slots、快捷回复]
+    render --> sources{used_rag = true?}
+    sources -- 是 --> showSources[展示命中资料来源 Top N]
+    sources -- 否 --> nextTurn[等待下一轮用户输入]
+    showSources --> nextTurn
+    nextTurn --> chat
+
+    subgraph CRM[CRM 留资数据]
+        downgraded --> crmStore[(InMemoryCrm.leads)]
+        fullLead --> crmStore
+        crmStore --> crmApi[GET /api/crm/leads<br/>查看线索列表]
+    end
+
+    subgraph Index[RAG 索引管理]
+        status[GET /api/rag/status<br/>查看索引状态] --> ui
+        rebuild[点击重建索引<br/>POST /api/rag/rebuild] --> enabled{RAG_EMBEDDING_ENABLED=true?}
+        enabled -- 否 --> disabled[返回 disabled]
+        enabled -- 是 --> manager[RagIndexManager.rebuild]
+        manager --> chunks[读取 data/rag/chunks.jsonl]
+        chunks --> embed[TongyiEmbeddingClient<br/>生成向量]
+        embed --> cache[写入 data/rag/vector_index.json]
+        cache --> refresh[刷新 engine.rag_service]
+    end
+
+    classDef frontend fill:#E8F4FF,stroke:#2F80ED,color:#123;
+    classDef backend fill:#F7F1FF,stroke:#8E44AD,color:#213;
+    classDef decision fill:#FFF6D8,stroke:#B7791F,color:#332;
+    classDef data fill:#EAF8EF,stroke:#2E7D32,color:#132;
+    classDef warning fill:#FFECEC,stroke:#D64545,color:#311;
+
+    class user,ui,reset,render,showSources,nextTurn frontend;
+    class welcome,qualify,chat,session,router,phoneStep,hook,collectSlots,freeText,greeting,unrelated,qaTurn,answerThenLead,ragEntry,ragSearch,keyword,vector,noVector,fuse,rerank,topSources,generate,extractive,compressed,sourcedReply,manager,embed,refresh backend;
+    class phoneCheck,crmDecision,directLead,qualState,typeCheck,turnLimit,ragAvailable,vectorDecision,confidence,llmDecision,compress,sources,enabled decision;
+    class downgraded,fullLead,crmStore,crmApi,chunks,cache,status,rebuild data;
+    class retryPhone,fallback,disabled warning;
