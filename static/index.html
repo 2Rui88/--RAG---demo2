@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>学历提升规划助手</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="chat-panel" aria-label="学历提升规划助手">
+        <header class="topbar">
+          <div>
+            <p class="label">智能客户 Demo</p>
+            <h1>学历提升规划助手</h1>
+          </div>
+          <button class="icon-button" id="resetButton" type="button" title="重置会话">↻</button>
+        </header>
+
+        <div class="status-strip">
+          <div>
+            <span>当前阶段</span>
+            <strong id="stateText">诊断中</strong>
+          </div>
+          <div>
+            <span>留资状态</span>
+            <strong id="leadText">未触发</strong>
+          </div>
+        </div>
+
+        <div class="messages" id="messages" aria-live="polite"></div>
+
+        <div class="quick-replies" id="quickReplies"></div>
+
+        <form class="composer" id="chatForm">
+          <input id="messageInput" autocomplete="off" placeholder="输入学历提升相关问题，或直接点快捷选项" />
+          <button type="submit">发送</button>
+        </form>
+      </section>
+
+      <aside class="side-panel" aria-label="诊断信息">
+        <h2>已识别信息</h2>
+        <dl class="slots">
+          <div><dt>当前学历</dt><dd id="slotEducation">未填写</dd></div>
+          <div><dt>提升目标</dt><dd id="slotGoal">未填写</dd></div>
+          <div><dt>主要用途</dt><dd id="slotPurpose">未填写</dd></div>
+          <div><dt>手机号</dt><dd id="slotPhone">未留资</dd></div>
+          <div><dt>CRM 线索</dt><dd id="slotCrmLead">未写入</dd></div>
+        </dl>
+        <div class="guardrail">
+          <strong>对话约束</strong>
+          <p>价格、资格、报名、最快拿证等问题会进入免费规划留资钩子；RAG 仅基于知识库命中内容回答，低置信不编造。</p>
+        </div>
+        <div class="rag-tools">
+          <div>
+            <strong>RAG 索引</strong>
+            <p id="ragStatus">正在读取索引状态</p>
+          </div>
+          <button id="rebuildRagButton" type="button">重建向量索引</button>
+        </div>
+      </aside>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
