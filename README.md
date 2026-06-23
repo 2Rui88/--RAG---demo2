@@ -33,3 +33,4 @@ flowchart TD
   M -- "有效手机号" --> N["success + 写入 CRM"]
   M -- "稍后再说" --> O["留资兜底"]
 ```
+<img width="1180" height="2480" alt="image" src="https://github.com/user-attachments/assets/ccc8f99d-cec2-4a55-8f6f-955222b3b0ca" />
