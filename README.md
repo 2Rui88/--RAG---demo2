@@ -34,6 +34,53 @@ flowchart TD
   M -- "稍后再说" --> O["留资兜底"]
 ```
 <img width="1180" height="2480" alt="image" src="https://github.com/user-attachments/assets/ccc8f99d-cec2-4a55-8f6f-955222b3b0ca" />
+
+```mermaid
+flowchart TD
+    A["用户输入"] --> B["/api/chat"]
+    B --> C["ConversationEngine"]
+
+    C --> D{"当前是否在留资/手机校验?"}
+    D -- "是" --> E["手机号校验 / 拒绝留资处理"]
+    E --> F{"手机号有效或拒绝?"}
+    F -- "有效" --> G["写入 CRM: full lead"]
+    F -- "拒绝" --> H["写入 CRM: downgraded lead"]
+    G --> Z["返回回复"]
+    H --> Z
+
+    D -- "否" --> I["Intent Router"]
+    I --> J{"是否 lead / human_service?"}
+    J -- "是" --> K["留资钩子"]
+    K --> Z
+
+    J -- "否" --> L{"是否处于画像采集阶段?"}
+    L -- "是" --> M["Slot Filling"]
+    M --> N{"education / goal / purpose 是否齐全?"}
+    N -- "否" --> O["追问缺失槽位"]
+    O --> Z
+    N -- "是" --> P["进入咨询阶段"]
+    P --> Z
+
+    L -- "否" --> Q{"意图类型"}
+    Q -- "small_talk" --> R["Small Talk 模板回复"]
+    R --> Z
+
+    Q -- "rag / faq" --> S["读取最近历史"]
+    S --> T["Query Rewrite"]
+    T --> U["RAG Retriever"]
+    U --> V{"是否命中可靠依据?"}
+    V -- "是" --> W["Answer Builder / LLM 生成或兜底摘要"]
+    W --> X["返回答案 + 来源"]
+    X --> Z
+
+    V -- "否" --> Y["知识库无依据兜底 + pending_soft_lead"]
+    Y --> Z
+```
+
+
+
+
+
 # 部署运行说明
 
 ## 1. 环境
