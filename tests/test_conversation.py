@@ -25,6 +25,16 @@ class StubRagService:
         return type("RagAnswer", (), {"reply": self.reply, "sources": [source]})()
 
 
+class StubQueryRewriter:
+    def __init__(self, rewritten: str) -> None:
+        self.rewritten = rewritten
+        self.calls: list[tuple[str, list[dict[str, str]]]] = []
+
+    def rewrite(self, query: str, history: list[dict[str, str]] | None = None) -> str:
+        self.calls.append((query, list(history or [])))
+        return self.rewritten
+
+
 def test_quick_choices_fill_slots_and_move_to_intent_stage():
     engine = ConversationEngine()
     session = engine.create_session("s1")
@@ -242,6 +252,86 @@ def test_free_text_uses_rag_answer_when_available():
     assert response.lead_required is False
     assert response.used_rag is True
     assert response.rag_sources[0]["chunk_id"] == "chunk_1"
+
+
+def test_free_text_rewrites_query_before_rag_lookup():
+    rag_service = StubRagService("2025年广东成人高考报名时间为9月9日。")
+    rewriter = StubQueryRewriter("2025年广东成人高考报名时间是什么时候？")
+    engine = ConversationEngine(rag_service=rag_service, query_rewriter=rewriter)
+    session = engine.create_session("rewrite-rag")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "2025年广东成考什么时候报名？")
+
+    assert response.used_rag is True
+    assert rewriter.calls[0] == ("2025年广东成考什么时候报名？", [])
+    assert rag_service.calls == ["2025年广东成人高考报名时间是什么时候？"]
+
+
+def test_follow_up_rewrite_receives_recent_history():
+    rag_service = StubRagService("这是知识库回答。")
+    rewriter = StubQueryRewriter("成人高考报名时间是什么时候？")
+    engine = ConversationEngine(rag_service=rag_service, query_rewriter=rewriter)
+    session = engine.create_session("rewrite-history")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+    first_response = engine.handle_message(session, "成人高考和国开有什么区别？")
+
+    engine.handle_message(session, "报名时间呢？")
+
+    assert rewriter.calls[1][0] == "报名时间呢？"
+    assert rewriter.calls[1][1] == [
+        {"role": "user", "content": "成人高考和国开有什么区别？"},
+        {"role": "assistant", "content": first_response.reply},
+    ]
+    assert rag_service.calls[-1] == "成人高考报名时间是什么时候？"
+
+
+def test_conversation_records_user_and_assistant_history_for_free_text_turns():
+    engine = ConversationEngine(rag_service=StubRagService("2025年广东成人高考报名时间为9月9日。"))
+    session = engine.create_session("history-record")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "2025年广东成考什么时候报名？")
+
+    assert session.history[-2:] == [
+        {"role": "user", "content": "2025年广东成考什么时候报名？"},
+        {"role": "assistant", "content": response.reply},
+    ]
+
+
+def test_conversation_history_keeps_recent_ten_turns():
+    engine = ConversationEngine(rag_service=StubRagService("这是知识库回答。"))
+    session = engine.create_session("history-cap")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    for index in range(12):
+        engine.handle_message(session, f"政策问题{index}")
+        session.state = "intent_router"
+
+    assert len(session.history) == 20
+    assert session.history[0] == {"role": "user", "content": "政策问题2"}
+    assert session.history[-2]["content"] == "政策问题11"
+
+
+def test_reset_session_clears_conversation_history():
+    engine = ConversationEngine(rag_service=StubRagService("这是知识库回答。"))
+    session = engine.create_session("history-reset")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+    engine.handle_message(session, "怎么报名")
+
+    engine.reset_session(session)
+
+    assert session.history == []
 
 
 def test_accepting_soft_lead_after_rag_fallback_enters_phone_verification_without_rag():

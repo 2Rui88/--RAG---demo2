@@ -31,6 +31,15 @@ RAG_COMPRESSION_SYSTEM_PROMPT = """你是学历提升政策问答的答案压缩
 4. 语气自然，优先用短段落或要点，避免长篇粘贴。"""
 
 
+QUERY_REWRITE_SYSTEM_PROMPT = """你是学历提升领域查询改写助手。
+请将用户问题改写为更适合知识库检索的标准问题。
+要求：
+1. 保留原始语义，不新增事实、时间、院校、价格或承诺。
+2. 展开简称并补充常见领域术语，例如成人高考、成考、专升本、国家开放大学。
+3. 如果用户问题依赖上文，可以结合最近对话补全省略对象。
+4. 只输出一句改写后的问题，不要解释。"""
+
+
 class QwenClient:
     def __init__(self) -> None:
         self.api_key = os.getenv("QWEN_API_KEY", "")
@@ -111,6 +120,31 @@ class QwenClient:
         content = completion.choices[0].message.content
         return content.strip() if content else fallback
 
+    def rewrite_query(self, query: str, history: list[dict[str, str]] | None = None) -> str:
+        fallback = query
+        if not self.enabled or not self.client:
+            return fallback
+
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": QUERY_REWRITE_SYSTEM_PROMPT},
+                    {"role": "user", "content": _query_rewrite_prompt(query, history or [])},
+                ],
+                temperature=0.1,
+                max_tokens=120,
+            )
+        except Exception:
+            return fallback
+
+        content = completion.choices[0].message.content
+        rewritten = content.strip() if content else ""
+        return rewritten or fallback
+
+    def rewrite(self, query: str, history: list[dict[str, str]] | None = None) -> str:
+        return self.rewrite_query(query, history)
+
 
 def _rag_user_prompt(query: str, sources: list[SearchResult]) -> str:
     source_blocks = []
@@ -138,6 +172,17 @@ def _rag_compression_prompt(query: str, answer: str, sources: list[SearchResult]
         f"来源标题：{source_titles or '未标注'}\n\n"
         f"待压缩回答：\n{answer}"
     )
+
+
+def _query_rewrite_prompt(query: str, history: list[dict[str, str]]) -> str:
+    history_lines = []
+    for item in history[-20:]:
+        role = item.get("role", "")
+        content = item.get("content", "")
+        if role and content:
+            history_lines.append(f"{role}: {content}")
+    history_text = "\n".join(history_lines) if history_lines else "无"
+    return f"最近对话：\n{history_text}\n\n用户问题：\n{query}"
 
 
 def _extractive_rag_fallback(sources: list[SearchResult]) -> str:
