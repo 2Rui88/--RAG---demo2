@@ -290,7 +290,7 @@ class ConversationEngine:
         education = session.slots.get("education", "您的")
         purpose = session.slots.get("purpose", "后续使用")
         hook = (
-            f"您这个情况需要结合{education}基础和{purpose}用途来核算，具体费用、能不能报、最快拿证时间都不建议直接拍脑袋。"
+            f"您这个情况需要结合{education}基础和{purpose}用途来核算，像具体费用、是否符合报考条件、最快多久能拿证这些问题，都要看个人情况来判断，不能简单一概而论。"
             "老师可以免费帮您算具体费用和适合路径，方便留个手机号吗？只是初步沟通，不强制报名。"
         )
         reply = f"{prefix}\n\n{hook}" if prefix else hook
