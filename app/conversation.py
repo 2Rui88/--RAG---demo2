@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from app.crm import InMemoryCrm
+from app.rag.query_rewrite import NoopQueryRewriter, QueryRewriter
 from app.rag.service import RagService
 
 
@@ -18,6 +19,7 @@ State = Literal[
 ]
 
 LEAD_AFTER_QA_TURNS = 10
+MAX_HISTORY_MESSAGES = 20
 
 
 @dataclass
@@ -27,6 +29,7 @@ class ConversationSession:
     slots: dict[str, str] = field(default_factory=dict)
     qa_turns: int = 0
     pending_soft_lead: bool = False
+    history: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -120,9 +123,15 @@ class ConversationEngine:
     soft_lead_accept_keywords = ("好", "可以", "同意", "要", "需要", "愿意", "行", "嗯", "对", "帮我算", "核算")
     phone_pattern = re.compile(r"^1[3-9]\d{9}$")
 
-    def __init__(self, crm: InMemoryCrm | None = None, rag_service: RagService | None = None) -> None:
+    def __init__(
+        self,
+        crm: InMemoryCrm | None = None,
+        rag_service: RagService | None = None,
+        query_rewriter: QueryRewriter | None = None,
+    ) -> None:
         self.crm = crm
         self.rag_service = rag_service
+        self.query_rewriter = query_rewriter or NoopQueryRewriter()
 
     def create_session(self, session_id: str) -> ConversationSession:
         return ConversationSession(session_id=session_id)
@@ -132,6 +141,7 @@ class ConversationEngine:
         session.slots.clear()
         session.qa_turns = 0
         session.pending_soft_lead = False
+        session.history.clear()
         return self.welcome_response(session)
 
     def welcome_response(self, session: ConversationSession) -> ConversationResponse:
@@ -242,12 +252,16 @@ class ConversationEngine:
 
         answer_response = self._answer_user_need(session, text)
         if answer_response:
+            self._record_turn(session, text, answer_response.reply)
             return answer_response
-        return self._fallback_answer_response(session)
+        fallback_response = self._fallback_answer_response(session)
+        self._record_turn(session, text, fallback_response.reply)
+        return fallback_response
 
     def _answer_user_need(self, session: ConversationSession, text: str) -> ConversationResponse | None:
         if self.rag_service:
-            rag_answer = self.rag_service.answer(text)
+            query = self.query_rewriter.rewrite(text, self._recent_history(session)).strip() or text
+            rag_answer = self.rag_service.answer(query)
             if rag_answer:
                 reply = rag_answer.reply
                 if self._is_signup_process_intent(text):
@@ -271,12 +285,14 @@ class ConversationEngine:
 
     def _answer_then_lead_hook(self, session: ConversationSession, text: str) -> ConversationResponse:
         answer_response = self._answer_user_need(session, text) or self._fallback_answer_response(session)
-        return self._lead_hook(
+        response = self._lead_hook(
             session,
             prefix=answer_response.reply,
             used_rag=answer_response.used_rag,
             rag_sources=answer_response.rag_sources,
         )
+        self._record_turn(session, text, response.reply)
+        return response
 
     def _lead_hook(
         self,
@@ -428,6 +444,19 @@ class ConversationEngine:
             used_rag=used_rag,
             rag_sources=rag_sources or [],
         )
+
+    def _record_turn(self, session: ConversationSession, user_message: str, assistant_reply: str) -> None:
+        session.history.extend(
+            [
+                {"role": "user", "content": user_message},
+                {"role": "assistant", "content": assistant_reply},
+            ]
+        )
+        if len(session.history) > MAX_HISTORY_MESSAGES:
+            del session.history[: len(session.history) - MAX_HISTORY_MESSAGES]
+
+    def _recent_history(self, session: ConversationSession) -> list[dict[str, str]]:
+        return list(session.history[-MAX_HISTORY_MESSAGES:])
 
 
 def _format_rag_sources(sources: list[object]) -> list[dict[str, str | float | None]]:
