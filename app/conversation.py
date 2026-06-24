@@ -5,8 +5,11 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from app.crm import InMemoryCrm
+from app.intent_router import IntentResult, IntentRouter, RuleIntentRouter
 from app.rag.query_rewrite import NoopQueryRewriter, QueryRewriter
 from app.rag.service import RagService
+from app.small_talk import SmallTalkResponder, TemplateSmallTalkResponder
+from app.slot_filling import REQUIRED_SLOT_KEYS, RuleSlotExtractor, SlotExtractor, merge_slots
 
 
 State = Literal[
@@ -128,10 +131,16 @@ class ConversationEngine:
         crm: InMemoryCrm | None = None,
         rag_service: RagService | None = None,
         query_rewriter: QueryRewriter | None = None,
+        intent_router: IntentRouter | None = None,
+        slot_extractor: SlotExtractor | None = None,
+        small_talk_responder: SmallTalkResponder | None = None,
     ) -> None:
         self.crm = crm
         self.rag_service = rag_service
         self.query_rewriter = query_rewriter or NoopQueryRewriter()
+        self.intent_router = intent_router or RuleIntentRouter()
+        self.slot_extractor = slot_extractor or RuleSlotExtractor()
+        self.small_talk_responder = small_talk_responder or TemplateSmallTalkResponder()
 
     def create_session(self, session_id: str) -> ConversationSession:
         return ConversationSession(session_id=session_id)
@@ -181,16 +190,28 @@ class ConversationEngine:
                 )
             session.pending_soft_lead = False
 
-        if self._is_direct_lead_intent(text):
+        early_intent = self.intent_router.classify(text, self._recent_history(session))
+        if early_intent.intent in {"lead", "human_service"}:
             return self._lead_hook(session)
 
         if session.state in {"welcome", "qualification"}:
             return self._handle_qualification(session, text)
 
-        return self._handle_free_text(session, text)
+        return self._handle_free_text(session, text, intent=early_intent)
 
     def _handle_qualification(self, session: ConversationSession, text: str) -> ConversationResponse:
         session.state = "qualification"
+        extracted_slots = self.slot_extractor.extract(text, self._recent_history(session))
+        session.slots = merge_slots(session.slots, extracted_slots)
+
+        if all(key in session.slots for key in REQUIRED_SLOT_KEYS):
+            session.state = "intent_router"
+            return self._response(
+                session,
+                "信息我先记下了。您可以继续问学历形式、学信网、报考条件等问题；如果想核算费用或报名方案，我也可以帮您约老师免费规划。",
+                self._quick_replies_for(session),
+            )
+
         if "education" not in session.slots:
             education = self._match_choice(text, self.education_choices, self.education_aliases)
             if not education:
@@ -231,20 +252,23 @@ class ConversationEngine:
         session.state = "intent_router"
         return self._handle_free_text(session, text)
 
-    def _handle_free_text(self, session: ConversationSession, text: str) -> ConversationResponse:
-        if self._is_greeting(text):
+    def _handle_free_text(
+        self,
+        session: ConversationSession,
+        text: str,
+        *,
+        intent: IntentResult | None = None,
+    ) -> ConversationResponse:
+        intent_result = intent or self.intent_router.classify(text, self._recent_history(session))
+        if intent_result.intent == "small_talk":
             return self._response(
                 session,
-                "您好，我在的。您可以继续问学历提升、报考条件、报名流程、学信网或证书用途相关问题。",
+                self.small_talk_responder.respond(text, off_topic="非学历提升" in intent_result.reason),
                 self._quick_replies_for(session),
             )
 
-        if self._is_unrelated(text):
-            return self._response(
-                session,
-                "这个我帮不上，不过关于学历提升、报考条件、证书用途这些问题，我可以继续帮您梳理。",
-                self._quick_replies_for(session),
-            )
+        if intent_result.intent in {"lead", "human_service"}:
+            return self._lead_hook(session)
 
         session.qa_turns += 1
         if session.qa_turns >= LEAD_AFTER_QA_TURNS:

@@ -1,5 +1,6 @@
 from app.conversation import ConversationEngine
 from app.crm import InMemoryCrm
+from app.intent_router import IntentResult
 
 
 class StubRagService:
@@ -33,6 +34,36 @@ class StubQueryRewriter:
     def rewrite(self, query: str, history: list[dict[str, str]] | None = None) -> str:
         self.calls.append((query, list(history or [])))
         return self.rewritten
+
+
+class StubIntentRouter:
+    def __init__(self, intent: str) -> None:
+        self.intent = intent
+        self.calls: list[tuple[str, list[dict[str, str]]]] = []
+
+    def classify(self, text: str, history: list[dict[str, str]] | None = None) -> IntentResult:
+        self.calls.append((text, list(history or [])))
+        return IntentResult(intent=self.intent, confidence=0.99, reason="stub")
+
+
+class StubSlotExtractor:
+    def __init__(self, slots: dict[str, str]) -> None:
+        self.slots = slots
+        self.calls: list[tuple[str, list[dict[str, str]]]] = []
+
+    def extract(self, text: str, history: list[dict[str, str]] | None = None) -> dict[str, str]:
+        self.calls.append((text, list(history or [])))
+        return dict(self.slots)
+
+
+class StubSmallTalkResponder:
+    def __init__(self, reply: str = "stub small talk reply") -> None:
+        self.reply = reply
+        self.calls: list[tuple[str, bool]] = []
+
+    def respond(self, text: str, *, off_topic: bool = False) -> str:
+        self.calls.append((text, off_topic))
+        return self.reply
 
 
 def test_quick_choices_fill_slots_and_move_to_intent_stage():
@@ -82,6 +113,55 @@ def test_greeting_during_intent_stage_does_not_use_rag():
     assert "学历提升" in response.reply
 
 
+def test_injected_small_talk_responder_is_used_for_small_talk():
+    rag_service = StubRagService("这段 RAG 回答不应该出现")
+    responder = StubSmallTalkResponder()
+    engine = ConversationEngine(rag_service=rag_service, small_talk_responder=responder)
+    session = engine.create_session("small-talk-injected")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "谢谢")
+
+    assert response.reply == "stub small talk reply"
+    assert response.used_rag is False
+    assert rag_service.calls == []
+    assert responder.calls == [("谢谢", False)]
+
+
+def test_unrelated_question_during_intent_stage_does_not_use_rag():
+    rag_service = StubRagService("这段 RAG 回答不应该出现")
+    engine = ConversationEngine(rag_service=rag_service)
+    session = engine.create_session("intent-unrelated")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "今天天气怎么样？")
+
+    assert response.state == "intent_router"
+    assert response.used_rag is False
+    assert rag_service.calls == []
+    assert "这个我帮不上" in response.reply
+
+
+def test_small_talk_then_business_question_can_return_to_rag():
+    rag_service = StubRagService("这是知识库回答。")
+    engine = ConversationEngine(rag_service=rag_service)
+    session = engine.create_session("small-talk-return")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    small_talk = engine.handle_message(session, "再见")
+    business = engine.handle_message(session, "成考和国开有什么区别？")
+
+    assert small_talk.used_rag is False
+    assert business.used_rag is True
+    assert "这是知识库回答" in business.reply
+
+
 def test_natural_slot_text_is_accepted_when_it_contains_clear_meaning():
     engine = ConversationEngine()
     session = engine.create_session("natural")
@@ -91,6 +171,57 @@ def test_natural_slot_text_is_accepted_when_it_contains_clear_meaning():
 
     assert first.slots["education"] == "高中/中专"
     assert second.slots["goal"] == "专升本"
+
+
+def test_one_message_can_fill_required_qualification_slots():
+    engine = ConversationEngine()
+    session = engine.create_session("multi-slot")
+
+    response = engine.handle_message(session, "我是大专，想专升本，主要为了考公")
+
+    assert response.state == "intent_router"
+    assert response.slots["education"] == "大专"
+    assert response.slots["goal"] == "专升本"
+    assert response.slots["purpose"] == "考公考编"
+    assert "继续问学历形式" in response.reply
+
+
+def test_partial_slot_filling_prompts_next_missing_required_slot():
+    engine = ConversationEngine()
+    session = engine.create_session("partial-slot")
+
+    response = engine.handle_message(session, "我是大专，想专升本")
+
+    assert response.state == "qualification"
+    assert response.slots["education"] == "大专"
+    assert response.slots["goal"] == "专升本"
+    assert "主要准备用在哪方面" in response.reply
+
+
+def test_optional_slots_are_saved_without_becoming_required_questions():
+    engine = ConversationEngine()
+    session = engine.create_session("optional-slot")
+
+    response = engine.handle_message(session, "我是大专，想专升本，考公用，在广州，预算一万以内，想尽快")
+
+    assert response.state == "intent_router"
+    assert response.slots["city"] == "广州"
+    assert response.slots["budget"] == "一万以内"
+    assert response.slots["urgency"] == "尽快"
+
+
+def test_injected_slot_extractor_is_used_during_qualification():
+    extractor = StubSlotExtractor({"education": "本科", "goal": "考证/职称", "purpose": "评职称"})
+    engine = ConversationEngine(slot_extractor=extractor)
+    session = engine.create_session("injected-slot")
+
+    response = engine.handle_message(session, "帮我规划")
+
+    assert response.state == "intent_router"
+    assert response.slots["education"] == "本科"
+    assert response.slots["goal"] == "考证/职称"
+    assert response.slots["purpose"] == "评职称"
+    assert extractor.calls == [("帮我规划", [])]
 
 
 def test_price_or_signup_intent_triggers_lead_hook():
@@ -140,6 +271,73 @@ def test_conversion_intents_directly_enter_lead_hook_without_rag_lookup():
         assert "\u8fd9\u6bb5 RAG \u56de\u7b54\u4e0d\u5e94\u8be5\u51fa\u73b0" not in response.reply
 
     assert rag_service.calls == []
+
+
+def test_injected_intent_router_can_route_message_to_lead_hook():
+    rag_service = StubRagService("这段 RAG 回答不应该出现")
+    intent_router = StubIntentRouter("lead")
+    engine = ConversationEngine(rag_service=rag_service, intent_router=intent_router)
+    session = engine.create_session("router-lead")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "帮我看看")
+
+    assert response.state == "lead_hook"
+    assert response.lead_required is True
+    assert response.used_rag is False
+    assert rag_service.calls == []
+    assert intent_router.calls[-1][0] == "帮我看看"
+
+
+def test_injected_intent_router_can_route_message_to_small_talk():
+    rag_service = StubRagService("这段 RAG 回答不应该出现")
+    intent_router = StubIntentRouter("small_talk")
+    engine = ConversationEngine(rag_service=rag_service, intent_router=intent_router)
+    session = engine.create_session("router-small-talk")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "随便聊聊")
+
+    assert response.state == "intent_router"
+    assert response.used_rag is False
+    assert rag_service.calls == []
+    assert "学历提升" in response.reply
+
+
+def test_injected_intent_router_can_route_message_to_human_service_lead_hook():
+    rag_service = StubRagService("这段 RAG 回答不应该出现")
+    intent_router = StubIntentRouter("human_service")
+    engine = ConversationEngine(rag_service=rag_service, intent_router=intent_router)
+    session = engine.create_session("router-human")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "我想咨询")
+
+    assert response.state == "lead_hook"
+    assert response.lead_required is True
+    assert rag_service.calls == []
+
+
+def test_injected_intent_router_can_route_message_to_rag():
+    rag_service = StubRagService("这是知识库回答。")
+    intent_router = StubIntentRouter("rag")
+    engine = ConversationEngine(rag_service=rag_service, intent_router=intent_router)
+    session = engine.create_session("router-rag")
+    engine.handle_message(session, "高中/中专")
+    engine.handle_message(session, "升大专")
+    engine.handle_message(session, "考公考编")
+
+    response = engine.handle_message(session, "你好")
+
+    assert response.used_rag is True
+    assert "这是知识库回答" in response.reply
+    assert rag_service.calls == ["你好"]
 
 
 def test_lead_hook_after_ten_qa_turns_answers_tenth_question_first():

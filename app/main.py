@@ -22,6 +22,8 @@ RAG_CHUNKS_PATH = BASE_DIR / "data" / "rag" / "chunks.jsonl"
 RAG_VECTOR_CACHE_PATH = BASE_DIR / "data" / "rag" / "vector_index.json"
 RAG_EMBEDDING_ENABLED = os.getenv("RAG_EMBEDDING_ENABLED", "false").lower() == "true"
 RAG_QUERY_REWRITE_ENABLED = os.getenv("RAG_QUERY_REWRITE_ENABLED", "true").lower() == "true"
+INTENT_ROUTER_ENABLED = os.getenv("INTENT_ROUTER_ENABLED", "true").lower() == "true"
+SLOT_FILLING_ENABLED = os.getenv("SLOT_FILLING_ENABLED", "true").lower() == "true"
 
 app = FastAPI(title="RAG Lead Capture Demo", version="0.1.0")
 crm = InMemoryCrm()
@@ -44,6 +46,8 @@ engine = ConversationEngine(
     crm=crm,
     rag_service=rag_service,
     query_rewriter=qwen if RAG_QUERY_REWRITE_ENABLED else None,
+    intent_router=qwen if INTENT_ROUTER_ENABLED else None,
+    slot_extractor=qwen if SLOT_FILLING_ENABLED else None,
 )
 sessions: dict[str, ConversationSession] = {}
 

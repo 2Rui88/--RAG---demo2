@@ -5,7 +5,9 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from app.intent_router import MIN_MODEL_INTENT_CONFIDENCE, IntentResult, RuleIntentRouter
 from app.rag.retriever import SearchResult
+from app.slot_filling import RuleSlotExtractor, normalize_extracted_slots
 
 
 load_dotenv()
@@ -40,6 +42,31 @@ QUERY_REWRITE_SYSTEM_PROMPT = """你是学历提升领域查询改写助手。
 4. 只输出一句改写后的问题，不要解释。"""
 
 
+INTENT_CLASSIFIER_SYSTEM_PROMPT = """你是学历提升智能客服的意图分类器。
+请把用户输入分类为以下意图之一：
+faq: 明确常见问答，适合直接查 FAQ
+rag: 学历提升、成人高考、国开、自考、报名流程、政策、证书用途等知识咨询
+small_talk: 寒暄、感谢、告别或明显无关闲聊
+lead: 费用、报价、个人能否报名、最快拿证、报名方案等需要老师规划的转化问题
+human_service: 用户明确要求人工、老师、客服或电话/微信联系
+
+只输出 JSON，不要 Markdown。格式：
+{"intent":"rag","confidence":0.98,"reason":"用户正在咨询学历相关知识"}"""
+
+
+SLOT_EXTRACTION_SYSTEM_PROMPT = """你是学历提升咨询的用户画像槽位抽取器。
+请从用户输入中抽取以下字段，抽不到就返回 null：
+education: 只能是 高中/中专、大专、本科、初中及以下
+goal: 只能是 升大专、专升本、考证/职称、还不确定
+purpose: 只能是 考公考编、评职称、积分落户、找工作、个人提升
+city: 用户所在城市或地区
+budget: 用户预算表达
+urgency: 用户时间紧急程度，例如 尽快、今年
+
+只输出 JSON，不要 Markdown。格式：
+{"education":"大专","goal":"专升本","purpose":"考公考编","city":"深圳","budget":"一万以内","urgency":"尽快"}"""
+
+
 class QwenClient:
     def __init__(self) -> None:
         self.api_key = os.getenv("QWEN_API_KEY", "")
@@ -47,6 +74,8 @@ class QwenClient:
         self.model = os.getenv("QWEN_MODEL", "qwen3.5-flash")
         self.enabled = bool(self.api_key) and os.getenv("LLM_ENABLED", "true").lower() == "true"
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=8.0, max_retries=0) if self.enabled else None
+        self.rule_intent_router = RuleIntentRouter()
+        self.rule_slot_extractor = RuleSlotExtractor()
 
     def polish_reply(self, user_message: str, controlled_reply: str) -> str:
         if not self.enabled or not self.client:
@@ -145,6 +174,58 @@ class QwenClient:
     def rewrite(self, query: str, history: list[dict[str, str]] | None = None) -> str:
         return self.rewrite_query(query, history)
 
+    def classify_intent(self, text: str, history: list[dict[str, str]] | None = None) -> IntentResult:
+        fallback = self.rule_intent_router.classify(text, history)
+        if not self.enabled or not self.client:
+            return fallback
+
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": INTENT_CLASSIFIER_SYSTEM_PROMPT},
+                    {"role": "user", "content": _intent_classifier_prompt(text, history or [])},
+                ],
+                temperature=0.0,
+                max_tokens=120,
+            )
+        except Exception:
+            return fallback
+
+        content = completion.choices[0].message.content
+        result = _parse_intent_result(content or "")
+        if not result or result.confidence < MIN_MODEL_INTENT_CONFIDENCE:
+            return fallback
+        return result
+
+    def classify(self, text: str, history: list[dict[str, str]] | None = None) -> IntentResult:
+        return self.classify_intent(text, history)
+
+    def extract_slots(self, text: str, history: list[dict[str, str]] | None = None) -> dict[str, str]:
+        fallback = self.rule_slot_extractor.extract(text, history)
+        if not self.enabled or not self.client:
+            return fallback
+
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": SLOT_EXTRACTION_SYSTEM_PROMPT},
+                    {"role": "user", "content": _slot_extraction_prompt(text, history or [])},
+                ],
+                temperature=0.0,
+                max_tokens=180,
+            )
+        except Exception:
+            return fallback
+
+        content = completion.choices[0].message.content
+        slots = _parse_slot_result(content or "")
+        return slots if slots else fallback
+
+    def extract(self, text: str, history: list[dict[str, str]] | None = None) -> dict[str, str]:
+        return self.extract_slots(text, history)
+
 
 def _rag_user_prompt(query: str, sources: list[SearchResult]) -> str:
     source_blocks = []
@@ -183,6 +264,60 @@ def _query_rewrite_prompt(query: str, history: list[dict[str, str]]) -> str:
             history_lines.append(f"{role}: {content}")
     history_text = "\n".join(history_lines) if history_lines else "无"
     return f"最近对话：\n{history_text}\n\n用户问题：\n{query}"
+
+
+def _intent_classifier_prompt(text: str, history: list[dict[str, str]]) -> str:
+    history_lines = []
+    for item in history[-20:]:
+        role = item.get("role", "")
+        content = item.get("content", "")
+        if role and content:
+            history_lines.append(f"{role}: {content}")
+    history_text = "\n".join(history_lines) if history_lines else "无"
+    return f"最近对话：\n{history_text}\n\n用户输入：\n{text}"
+
+
+def _parse_intent_result(content: str) -> IntentResult | None:
+    import json
+
+    try:
+        raw = json.loads(content)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(raw, dict):
+        return None
+    intent = raw.get("intent")
+    if intent not in {"faq", "rag", "small_talk", "lead", "human_service"}:
+        return None
+    try:
+        confidence = float(raw.get("confidence", 0.0))
+    except (TypeError, ValueError):
+        return None
+    reason = raw.get("reason", "")
+    return IntentResult(intent=intent, confidence=confidence, reason=str(reason or ""))
+
+
+def _slot_extraction_prompt(text: str, history: list[dict[str, str]]) -> str:
+    history_lines = []
+    for item in history[-20:]:
+        role = item.get("role", "")
+        content = item.get("content", "")
+        if role and content:
+            history_lines.append(f"{role}: {content}")
+    history_text = "\n".join(history_lines) if history_lines else "无"
+    return f"最近对话：\n{history_text}\n\n用户输入：\n{text}"
+
+
+def _parse_slot_result(content: str) -> dict[str, str]:
+    import json
+
+    try:
+        raw = json.loads(content)
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return normalize_extracted_slots(raw)
 
 
 def _extractive_rag_fallback(sources: list[SearchResult]) -> str:
